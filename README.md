@@ -37,7 +37,7 @@ OpenForge is an open-source platform for creating, managing, and interacting wit
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/yourusername/openforge.git
+   git clone https://github.com/Varun-Patkar/openforge.git
    cd openforge
    ```
 
