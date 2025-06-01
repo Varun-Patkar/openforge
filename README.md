@@ -2,7 +2,7 @@
 
 OpenForge is an open-source platform for creating, managing, and interacting with AI assistants. It supports both API-based language models and in-browser WebLLM models for complete privacy.
 
-<!-- ![OpenForge Dashboard](/public/screenshot-dashboard.png) -->
+![OpenForge Dashboard](/public/screenshot-dashboard.png)
 
 ## Features
 
