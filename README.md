@@ -13,6 +13,12 @@ OpenForge is an open-source platform for creating, managing, and interacting wit
 - **Settings Management**: Fine-tune model parameters like temperature and context size
 - **Authentication**: GitHub-based authentication with user profiles
 - **Responsive Design**: Works on both desktop and mobile devices
+- **Git-like Version Control**: Track changes to your bots with commits and branches
+- **Branch Management**: Create and switch between different versions of your bots
+- **Pull Requests**: Review and merge changes between branches with inline comments
+- **Visual Diff Tool**: Compare changes between versions with an intuitive side-by-side diff viewer
+- **Model Export**: Download your models as standalone applications with a local HTML interface
+- **Collaboration**: Work with team members on the same bot with access controls
 
 ## Technologies
 
@@ -23,6 +29,7 @@ OpenForge is an open-source platform for creating, managing, and interacting wit
 - Tailwind CSS
 - shadcn/ui components
 - WebLLM for in-browser model execution
+- JSZip for model export functionality
 
 ## Getting Started
 
@@ -112,6 +119,22 @@ To use API-based LLM providers, you'll need to:
 3. Type messages in the input field at the bottom of the chat window
 4. Adjust settings using the settings dialog if needed
 
+### Version Control
+
+1. **Committing Changes**: Save versions of your bot with descriptive commit messages
+2. **Creating Branches**: Experiment with changes by creating a new branch
+3. **Pull Requests**: Submit changes for review and merge them into the target branch
+4. **Code Reviews**: Comment on specific lines of changes in pull requests
+5. **Resolving Comments**: Mark comments as resolved before completing pull requests
+
+### Downloading Models
+
+1. Navigate to your bot's page
+2. Click the "Download" button to export the model
+3. The downloaded zip contains:
+   - `model.json`: Your custom model configuration
+   - `index.html`: A standalone interface to run your model locally
+
 ## Project Structure
 
 ```
@@ -133,3 +156,28 @@ openforge/
 ├── public/             # Static assets
 └── styles/             # Global styles
 ```
+
+## Advanced Features
+
+### Branch Management
+
+- Create branches to work on features without affecting the main version
+- The master branch is protected and serves as the stable version
+- Create pull requests to merge changes from feature branches
+
+### Pull Request Workflow
+
+1. Create a branch for your changes
+2. Make and commit your modifications
+3. Create a pull request targeting the branch you want to merge into
+4. Review changes in the visual diff tool
+5. Add and resolve comments
+6. Complete the pull request to merge changes
+
+### Model Exporting
+
+Export your model as a standalone application that can run without the OpenForge platform. The exported package includes:
+
+- Model configuration with your custom parameters
+- WebLLM-compatible interface for local usage
+- No server dependencies required
