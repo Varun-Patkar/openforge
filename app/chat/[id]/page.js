@@ -111,7 +111,7 @@ export default function ChatPage({ params }) {
 		if (chatId) {
 			loadChat();
 		}
-	}, [chatId, status, router, loadChat]);
+	}, [chatId, status, router]);
 
 	// Get active preference when component loads
 	useEffect(() => {

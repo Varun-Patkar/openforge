@@ -152,20 +152,6 @@ export async function POST(request, { params }) {
 					}
 				);
 			}
-
-			// Prevent using master/default branch as a source
-			if (sourceBranch.isDefault) {
-				return new Response(
-					JSON.stringify({
-						message:
-							"Cannot create branches from the master branch. Please use another branch as source.",
-					}),
-					{
-						status: 400,
-						headers: { "Content-Type": "application/json" },
-					}
-				);
-			}
 		} else {
 			// Find a non-default branch to use as source
 			sourceBranch = await db.collection("branches").findOne({

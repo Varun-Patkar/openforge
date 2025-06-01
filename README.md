@@ -2,6 +2,8 @@
 
 OpenForge is an open-source platform for creating, managing, and interacting with AI assistants. It supports both API-based language models and in-browser WebLLM models for complete privacy.
 
+**[Try the Deployed Demo →](https://openforge.vercel.app/)**
+
 ![OpenForge Dashboard](/public/screenshot-dashboard.png)
 
 ## Features

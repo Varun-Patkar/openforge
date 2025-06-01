@@ -19,7 +19,6 @@ import {
 	AlertTriangle,
 	User,
 	GitPullRequest,
-	Download,
 } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { getBotById, deleteBot } from "@/lib/api";
@@ -526,18 +525,6 @@ export default function BotPage({ params }) {
 							<Trash2 className="h-4 w-4" /> Delete
 						</Button>
 					)}
-
-					{/* New Download Button */}
-					<Button
-						variant="outline"
-						onClick={() =>
-							(window.location.href = `/api/bots/${botId}/download`)
-						}
-						className="gap-2"
-					>
-						<Download className="h-4 w-4" />
-						Download Model
-					</Button>
 				</div>
 			</div>
 
