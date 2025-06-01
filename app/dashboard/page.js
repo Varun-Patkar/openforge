@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function DashboardPage() {
 	const router = useRouter();
-	const { status } = useAuth();
+	const { status, user } = useAuth();
 	const { toast } = useToast();
 	const [searchQuery, setSearchQuery] = useState("");
 	const [userBots, setUserBots] = useState([]);
@@ -40,8 +40,25 @@ export default function DashboardPage() {
 					fetchPublicBots(),
 				]);
 
-				setUserBots(myBots);
-				setPublicBots(gallery);
+				// Ensure each bot has a valid id property
+				const processedMyBots = myBots.map((bot) => ({
+					...bot,
+					id:
+						bot.id ||
+						bot._id ||
+						`user-bot-${Math.random().toString(36).substr(2, 9)}`,
+				}));
+
+				const processedGallery = gallery.map((bot) => ({
+					...bot,
+					id:
+						bot.id ||
+						bot._id ||
+						`gallery-bot-${Math.random().toString(36).substr(2, 9)}`,
+				}));
+
+				setUserBots(processedMyBots);
+				setPublicBots(processedGallery);
 			} catch (error) {
 				console.error("Error loading bots:", error);
 				toast({
@@ -83,7 +100,7 @@ export default function DashboardPage() {
 	}
 
 	return (
-		<div className="container px-4 py-8 mx-auto">
+		<div className="container px-4 py-8 mx-auto max-w-[95%]">
 			<div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
 				<div>
 					<h1 className="text-3xl font-bold">Dashboard</h1>
@@ -116,7 +133,11 @@ export default function DashboardPage() {
 					{filteredUserBots.length > 0 ? (
 						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 							{filteredUserBots.map((bot) => (
-								<BotCard key={bot.id} bot={bot} isOwner={true} />
+								<BotCard
+									key={bot.id || bot._id || `bot-${bot.name}-${Math.random()}`}
+									bot={bot}
+									isOwner={true}
+								/>
 							))}
 						</div>
 					) : (
@@ -137,8 +158,12 @@ export default function DashboardPage() {
 				<TabsContent value="gallery">
 					{filteredPublicBots.length > 0 ? (
 						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-							{filteredPublicBots.map((bot) => (
-								<BotCard key={bot.id} bot={bot} isOwner={false} />
+							{filteredPublicBots.map((bot, index) => (
+								<BotCard
+									key={bot.id || bot._id || `gallery-bot-${index}`}
+									bot={bot}
+									isOwner={bot.userId === user?.id}
+								/>
 							))}
 						</div>
 					) : (

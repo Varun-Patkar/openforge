@@ -17,7 +17,7 @@ export default function Home() {
 			{/* Hero Section */}
 			<section className="py-20 md:py-28 relative overflow-hidden">
 				<div className="absolute inset-0 bg-gradient-to-b from-primary/10 to-background dark:from-primary/5 -z-10"></div>
-				<div className="container px-4 mx-auto flex flex-col items-center text-center">
+				<div className="container px-4 mx-auto flex flex-col items-center text-center max-w-[95%]">
 					<h1 className="text-4xl md:text-6xl font-bold tracking-tight pb-6 bg-clip-text text-transparent bg-gradient-to-r from-primary to-chart-1">
 						Open Source the Future of AI Prompts
 					</h1>
@@ -42,7 +42,7 @@ export default function Home() {
 
 			{/* Features Section */}
 			<section className="py-16 bg-muted/50">
-				<div className="container px-4 mx-auto">
+				<div className="container px-4 mx-auto max-w-[95%]">
 					<h2 className="text-3xl font-bold text-center mb-12">
 						The Platform for Prompt Engineers
 					</h2>
@@ -74,7 +74,7 @@ export default function Home() {
 
 			{/* CTA Section */}
 			<section className="py-20 bg-gradient-to-r from-primary/10 to-chart-1/10">
-				<div className="container px-4 mx-auto text-center">
+				<div className="container px-4 mx-auto text-center max-w-[95%]">
 					<h2 className="text-3xl font-bold mb-6">
 						Ready to Revolutionize Prompting?
 					</h2>

@@ -116,8 +116,9 @@ export default function NewBotPage() {
 		);
 	}
 
+	// Update the container width
 	return (
-		<div className="container px-4 py-8 mx-auto max-w-3xl">
+		<div className="container px-4 py-8 mx-auto max-w-[90%]">
 			<div className="mb-6">
 				<h1 className="text-3xl font-bold mb-2">Create New Bot</h1>
 				<p className="text-muted-foreground">
@@ -138,6 +139,9 @@ export default function NewBotPage() {
 								onChange={handleChange}
 								maxLength={50}
 							/>
+							<p className="text-xs text-muted-foreground">
+								Choose carefully. Bot names cannot be changed after creation.
+							</p>
 						</div>
 
 						<div className="grid gap-3">
@@ -192,7 +196,7 @@ export default function NewBotPage() {
 								placeholder="You are a helpful assistant that..."
 								value={formData.systemPrompt}
 								onChange={handleChange}
-								className="resize-none h-32"
+								className="resize-vertical min-h-32" // Changed from resize-none h-32
 							/>
 							<p className="text-sm text-muted-foreground">
 								This defines your bot's personality and behavior
@@ -326,7 +330,7 @@ export default function NewBotPage() {
 												handleExampleChange(index, "input", e.target.value)
 											}
 											placeholder="What user might ask..."
-											className="resize-none h-20"
+											className="resize-vertical min-h-20" // Changed from resize-none h-20
 										/>
 									</div>
 
@@ -343,7 +347,7 @@ export default function NewBotPage() {
 												)
 											}
 											placeholder="How your bot should respond..."
-											className="resize-none h-20"
+											className="resize-vertical min-h-20" // Changed from resize-none h-20
 										/>
 									</div>
 

@@ -1,28 +1,33 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Trash2, Plus } from "lucide-react";
+import { Trash2, Plus, GitBranch } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { getBotById, updateBot } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { BranchSelector } from "@/components/branch-selector";
 
 export default function EditBotPage({ params }) {
 	const router = useRouter();
+	const searchParams = useSearchParams();
 	const { status } = useAuth();
 	const { toast } = useToast();
 	const botId = params.id;
 
+	// Get branchId from query params if available
+	const branchIdFromQuery = searchParams.get("branchId");
+
 	const [formData, setFormData] = useState({
 		name: "",
 		description: "",
-		visibility: "private",
+		visibility: "Private",
 		systemPrompt: "",
 		examples: [{ input: "", expectedOutput: "" }],
 		// LLM parameters with defaults
@@ -33,6 +38,45 @@ export default function EditBotPage({ params }) {
 
 	const [isLoading, setIsLoading] = useState(true);
 	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [branches, setBranches] = useState([]);
+	const [currentBranch, setCurrentBranch] = useState(null);
+
+	// Load branches for this bot
+	const loadBranches = useCallback(async () => {
+		try {
+			const response = await fetch(`/api/bots/${botId}/branches`);
+			if (response.ok) {
+				const branchesData = await response.json();
+				setBranches(branchesData);
+
+				// If we have a branch ID from query params, select it
+				if (branchIdFromQuery) {
+					const selectedBranch = branchesData.find(
+						(b) => b._id === branchIdFromQuery
+					);
+					if (selectedBranch) {
+						setCurrentBranch(selectedBranch);
+						return;
+					}
+				}
+
+				// Otherwise select the default branch
+				const defaultBranch =
+					branchesData.find((b) => b.isDefault) ||
+					(branchesData.length > 0 ? branchesData[0] : null);
+				if (defaultBranch) {
+					setCurrentBranch(defaultBranch);
+				}
+			}
+		} catch (error) {
+			console.error("Failed to fetch branches:", error);
+			toast({
+				title: "Error",
+				description: "Failed to load branch information",
+				variant: "destructive",
+			});
+		}
+	}, [botId, branchIdFromQuery, toast]);
 
 	useEffect(() => {
 		if (status === "unauthenticated") {
@@ -54,10 +98,21 @@ export default function EditBotPage({ params }) {
 					return;
 				}
 
+				// Check if current user is the owner or a collaborator
+				if (!botData.isOwner && !botData.isCollaborator) {
+					toast({
+						title: "Unauthorized",
+						description: "You don't have permission to edit this bot",
+						variant: "destructive",
+					});
+					router.push(`/bots/${botId}`);
+					return;
+				}
+
 				setFormData({
 					name: botData.name || "",
 					description: botData.description || "",
-					visibility: botData.visibility || "private",
+					visibility: botData.visibility || "Private",
 					systemPrompt: botData.systemPrompt || "",
 					examples:
 						botData.examples?.length > 0
@@ -72,6 +127,9 @@ export default function EditBotPage({ params }) {
 							? botData.contextMessagesCount
 							: 3,
 				});
+
+				// Load branches after loading bot
+				await loadBranches();
 			} catch (error) {
 				console.error("Error loading bot:", error);
 				toast({
@@ -88,7 +146,7 @@ export default function EditBotPage({ params }) {
 		if (botId) {
 			loadBot();
 		}
-	}, [botId, status, router, toast]);
+	}, [botId, status, router, toast, loadBranches]);
 
 	const handleChange = (e) => {
 		const { name, value } = e.target;
@@ -119,25 +177,150 @@ export default function EditBotPage({ params }) {
 		}
 	};
 
-	const handleSubmit = async (e) => {
-		e.preventDefault();
-		if (!formData.name.trim()) {
+	// Modify the branch selector container with stabilization fixes
+	const handleBranchChange = useCallback((branch) => {
+		setCurrentBranch(branch);
+	}, []);
+
+	const handleCreateBranch = async (branchName, sourceBranchId) => {
+		if (!branchName.trim() || !botId) {
 			toast({
 				title: "Error",
-				description: "Bot name is required",
+				description: "Branch name is required",
+				variant: "destructive",
+			});
+			return;
+		}
+
+		try {
+			const response = await fetch(`/api/bots/${botId}/branches`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					name: branchName,
+					sourceBranchId: sourceBranchId || currentBranch?._id,
+				}),
+			});
+
+			if (!response.ok) {
+				const error = await response.json();
+				throw new Error(error.message || "Failed to create branch");
+			}
+
+			const newBranch = await response.json();
+			setCurrentBranch(newBranch);
+
+			// Refresh branches list
+			await loadBranches();
+
+			toast({
+				title: "Success",
+				description: `Branch "${branchName}" created successfully`,
+			});
+		} catch (error) {
+			console.error("Error creating branch:", error);
+			toast({
+				title: "Error",
+				description: error.message || "Failed to create branch",
+				variant: "destructive",
+			});
+		}
+	};
+
+	// Memoize the branch selector to prevent unnecessary re-renders
+	const branchSelectorComponent = useMemo(() => {
+		return currentBranch ? (
+			<BranchSelector
+				key={`branch-selector-${currentBranch._id}`}
+				botId={botId}
+				currentBranch={currentBranch}
+				onBranchChange={handleBranchChange}
+				onCreateBranch={handleCreateBranch}
+			/>
+		) : (
+			<span className="text-sm font-medium">Loading branches...</span>
+		);
+	}, [currentBranch, botId, handleBranchChange, handleCreateBranch]);
+
+	const handleSubmit = async (e) => {
+		e.preventDefault();
+		if (!formData.description.trim()) {
+			toast({
+				title: "Error",
+				description: "Bot description is required",
+				variant: "destructive",
+			});
+			return;
+		}
+
+		if (!currentBranch) {
+			toast({
+				title: "Error",
+				description: "Please select a branch to save changes",
 				variant: "destructive",
 			});
 			return;
 		}
 
 		setIsSubmitting(true);
+		let commitId = null;
+
 		try {
-			await updateBot(botId, formData);
+			// Prepare model state for the commit
+			const modelState = {
+				BotName: formData.name,
+				Description: formData.description,
+				Visibility:
+					formData.visibility.charAt(0).toUpperCase() +
+					formData.visibility.slice(1),
+				SystemPrompt: formData.systemPrompt,
+				DefaultParams: {
+					Temperature: formData.temperature,
+					"Top P": formData.topP,
+					ContextWindow: formData.contextMessagesCount,
+				},
+				TestCases: formData.examples.map((example) => ({
+					input: example.input,
+					output: example.expectedOutput,
+				})),
+			};
+
+			// Create a commit with the changes - FIRST
+			const commitResponse = await fetch(`/api/bots/${botId}/commits`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					branchId: currentBranch._id,
+					message: `Updated ${formData.name} settings`,
+					modelState: modelState,
+				}),
+			});
+
+			if (!commitResponse.ok) {
+				const error = await commitResponse.json();
+				throw new Error(error.message || "Failed to create commit");
+			}
+
+			const commitData = await commitResponse.json();
+			commitId = commitData._id;
+
+			// Regular bot update - SECOND (this will update the bot's metadata in the database)
+			const { name, ...updateData } = formData; // Remove name from the update data
+			await updateBot(botId, updateData);
+
 			toast({
 				title: "Success",
-				description: "Bot updated successfully",
+				description: `Bot updated successfully on branch "${currentBranch.name}"`,
 			});
-			router.push(`/bots/${botId}`);
+
+			// Navigate back to the bot page with the branch selected and versions tab active
+			router.push(
+				`/bots/${botId}?branchId=${currentBranch._id}&tab=git&commitId=${commitId}`
+			);
 		} catch (error) {
 			console.error("Error updating bot:", error);
 			toast({
@@ -145,7 +328,6 @@ export default function EditBotPage({ params }) {
 				description: error.message || "Failed to update bot. Please try again.",
 				variant: "destructive",
 			});
-		} finally {
 			setIsSubmitting(false);
 		}
 	};
@@ -162,26 +344,46 @@ export default function EditBotPage({ params }) {
 	}
 
 	return (
-		<div className="container px-4 py-8 mx-auto max-w-3xl">
+		<div className="container px-4 py-8 mx-auto max-w-[90%]">
 			<div className="mb-6">
 				<h1 className="text-3xl font-bold mb-2">Edit Bot</h1>
 				<p className="text-muted-foreground">Update your bot's configuration</p>
 			</div>
 
+			{/* Branch Selector */}
+			<div className="mb-6 flex items-center gap-2 min-h-[40px]">
+				<GitBranch className="h-4 w-4 text-muted-foreground" />
+				<span className="text-sm text-muted-foreground">Current branch:</span>
+				<div className="flex-shrink-0">{branchSelectorComponent}</div>
+				<div className="ml-2 text-sm text-muted-foreground">
+					<span className="bg-yellow-100 dark:bg-yellow-900/30 px-2 py-1 rounded text-yellow-800 dark:text-yellow-300">
+						Changes will be committed to the selected branch
+					</span>
+				</div>
+			</div>
+
 			<form onSubmit={handleSubmit}>
-				{/* Basic information card - existing code */}
+				{/* Basic information card */}
 				<Card className="mb-8">
 					<CardContent className="pt-6 space-y-6">
 						<div className="grid gap-3">
-							<Label htmlFor="name">Bot Name</Label>
+							<Label htmlFor="name" className="flex items-center gap-2">
+								Bot Name
+								<span className="text-xs text-muted-foreground font-normal bg-muted px-2 py-0.5 rounded-sm">
+									Cannot be changed
+								</span>
+							</Label>
 							<Input
 								id="name"
 								name="name"
-								placeholder="My Awesome Assistant"
 								value={formData.name}
-								onChange={handleChange}
-								maxLength={50}
+								disabled
+								className="bg-muted/50 cursor-not-allowed"
 							/>
+							<p className="text-xs text-muted-foreground">
+								Bot names cannot be changed after creation to maintain
+								consistent references.
+							</p>
 						</div>
 
 						<div className="grid gap-3">
@@ -205,20 +407,20 @@ export default function EditBotPage({ params }) {
 								className="flex space-x-4"
 							>
 								<div className="flex items-center space-x-2">
-									<RadioGroupItem value="public" id="public" />
-									<Label htmlFor="public" className="cursor-pointer">
+									<RadioGroupItem value="Public" id="Public" />
+									<Label htmlFor="Public" className="cursor-pointer">
 										Public
 									</Label>
 								</div>
 								<div className="flex items-center space-x-2">
-									<RadioGroupItem value="private" id="private" />
-									<Label htmlFor="private" className="cursor-pointer">
+									<RadioGroupItem value="Private" id="Private" />
+									<Label htmlFor="Private" className="cursor-pointer">
 										Private
 									</Label>
 								</div>
 							</RadioGroup>
 							<p className="text-sm text-muted-foreground">
-								{formData.visibility === "public"
+								{formData.visibility === "Public"
 									? "Anyone can view and use this bot"
 									: "Only you can access this bot"}
 							</p>
@@ -226,6 +428,7 @@ export default function EditBotPage({ params }) {
 					</CardContent>
 				</Card>
 
+				{/* System Prompt Card */}
 				<Card className="mb-8">
 					<CardContent className="pt-6 space-y-6">
 						<div className="grid gap-3">
@@ -417,7 +620,11 @@ export default function EditBotPage({ params }) {
 					>
 						Cancel
 					</Button>
-					<Button type="submit" disabled={isSubmitting}>
+					<Button
+						type="submit"
+						disabled={isSubmitting || !currentBranch}
+						className="gap-1"
+					>
 						{isSubmitting ? "Saving..." : "Update Bot"}
 					</Button>
 				</div>

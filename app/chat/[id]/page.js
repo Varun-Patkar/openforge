@@ -55,6 +55,7 @@ const WebLLMProvider = dynamic(() => import("@/components/webllm-provider"), {
 		<div className="animate-pulse text-center">Loading WebLLM engine...</div>
 	),
 });
+import { GitCommit } from "lucide-react";
 
 export default function ChatPage({ params }) {
 	const router = useRouter();
@@ -95,6 +96,9 @@ export default function ChatPage({ params }) {
 	const [isModelLoading, setIsModelLoading] = useState(false);
 	const [modelLoadingStatus, setModelLoadingStatus] = useState("");
 	const [modelError, setModelError] = useState(null);
+
+	// Commit info state
+	const [commitInfo, setCommitInfo] = useState(null);
 
 	// Load chat data and bot details
 	useEffect(() => {
@@ -146,6 +150,18 @@ export default function ChatPage({ params }) {
 			setMessages(chatData.messages || []);
 			setEditTitle(chatData.title || "");
 			setBotId(chatData.botId);
+
+			// If chat has a commitId, fetch commit info
+			if (chatData.commitId) {
+				try {
+					const commitData = await fetch(
+						`/api/bots/${chatData.botId}/commits/${chatData.commitId}`
+					).then((r) => r.json());
+					setCommitInfo(commitData);
+				} catch (error) {
+					console.error("Error fetching commit info:", error);
+				}
+			}
 
 			if (chatData.bot) {
 				setBotName(chatData.bot.name || "AI Assistant");
@@ -454,7 +470,7 @@ export default function ChatPage({ params }) {
 	return (
 		<div className="flex h-screen">
 			{/* Chat History Sidebar - non-collapsible */}
-			<div className="w-80 bg-muted flex-shrink-0 border-r h-screen">
+			<div className="w-64 bg-muted flex-shrink-0 border-r h-screen">
 				<div className="p-4 flex flex-col h-full">
 					<div className="flex items-center justify-between mb-4">
 						<h2 className="font-semibold">{botName} - Chats</h2>
@@ -622,6 +638,14 @@ export default function ChatPage({ params }) {
 							)}
 							<p className="text-xs text-muted-foreground truncate max-w-[200px]">
 								Bot: {botName}
+								{commitInfo && (
+									<span className="ml-2 flex items-center">
+										<GitCommit className="h-3 w-3 mr-1" />
+										<span className="font-mono">
+											{commitInfo._id.substring(0, 8)}
+										</span>
+									</span>
+								)}
 							</p>
 						</div>
 					</div>
@@ -805,14 +829,28 @@ export default function ChatPage({ params }) {
 											message.role === "user"
 												? "bg-primary text-primary-foreground"
 												: "bg-muted"
-										}`}
+										} max-w-[90%]`}
 									>
 										{message.role === "user" ? (
-											<p className="whitespace-pre-wrap">{message.content}</p>
-										) : (
-											<div className="prose prose-sm dark:prose-invert prose-pre:bg-muted/50 max-w-none overflow-hidden whitespace-normal">
-												<ReactMarkdown>{message.content}</ReactMarkdown>
+											<div className="py-2 px-3 rounded-lg bg-primary text-primary-foreground max-w-[90%]">
+												<p className="whitespace-pre-wrap">{message.content}</p>
 											</div>
+										) : (
+											<div className="py-2 px-3 rounded-lg bg-muted max-w-[90%]">
+												<div className="prose prose-sm dark:prose-invert prose-pre:bg-muted/50 max-w-none overflow-hidden whitespace-normal">
+													<ReactMarkdown>{message.content}</ReactMarkdown>
+												</div>
+											</div>
+										)}
+
+										{/* Add profile link for user messages if we have user info */}
+										{message.role === "user" && message.userInfo && (
+											<Link
+												href={`/profile/${message.userInfo._id}`}
+												className="text-xs text-muted-foreground hover:text-primary transition-colors ml-2 mt-1"
+											>
+												{message.userInfo.name}
+											</Link>
 										)}
 									</div>
 								</div>

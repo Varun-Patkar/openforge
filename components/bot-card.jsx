@@ -1,10 +1,11 @@
-import { useRouter } from "next/navigation";
-import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, Edit, Trash2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { MessageSquare, Edit, Trash2, User } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { createChat } from "@/lib/chat-api";
+import { useToast } from "@/hooks/use-toast";
 
 export default function BotCard({ bot, isOwner }) {
 	const router = useRouter();
@@ -40,46 +41,67 @@ export default function BotCard({ bot, isOwner }) {
 
 	return (
 		<Card
-			className="overflow-hidden cursor-pointer transition-all hover:shadow-md"
+			className="overflow-hidden transition-all hover:shadow-md cursor-pointer"
 			onClick={() => router.push(`/bots/${bot.id}`)}
 		>
-			<CardContent className="p-4">
-				<div className="flex justify-between items-start mb-2">
-					<div>
-						<h3 className="font-medium text-lg">{bot.name}</h3>
-						<p className="text-sm text-muted-foreground line-clamp-2">
-							{bot.description || "No description provided."}
-						</p>
+			<CardContent className="p-5">
+				<div className="space-y-3">
+					<div className="flex items-center justify-between">
+						<h3 className="font-semibold text-lg truncate">{bot.name}</h3>
+						<Badge
+							variant={bot.visibility === "public" ? "secondary" : "outline"}
+						>
+							{bot.visibility}
+						</Badge>
 					</div>
-					<Badge
-						variant={bot.visibility === "public" ? "secondary" : "outline"}
-						className="ml-2 mt-1"
-					>
-						{bot.visibility}
-					</Badge>
+
+					<p className="text-sm text-muted-foreground line-clamp-2">
+						{bot.description || "No description provided."}
+					</p>
+
+					{/* Creator information */}
+					{bot.creator && (
+						<div className="flex items-center mt-1 text-xs text-muted-foreground">
+							<Avatar className="h-5 w-5 mr-1">
+								<AvatarImage
+									src={bot.creator.image}
+									alt={bot.creator.name || "Creator"}
+								/>
+								<AvatarFallback>
+									{bot.creator.name ? (
+										bot.creator.name.charAt(0).toUpperCase()
+									) : (
+										<User className="h-3 w-3" />
+									)}
+								</AvatarFallback>
+							</Avatar>
+							<span>{bot.creator.name || "Anonymous User"}</span>
+						</div>
+					)}
 				</div>
 			</CardContent>
-			<CardFooter className="p-4 pt-0 flex gap-2 justify-between">
+
+			<CardFooter className="p-3 bg-muted/30 border-t flex justify-between">
 				<Button
 					variant="default"
 					size="sm"
 					className="gap-1"
 					onClick={handleChatClick}
 				>
-					<MessageSquare className="h-4 w-4" /> Chat
+					<MessageSquare className="h-4 w-4" />
+					Chat
 				</Button>
 
 				{isOwner && (
-					<div className="flex gap-2">
-						<Button
-							variant="outline"
-							size="sm"
-							className="gap-1"
-							onClick={handleEditClick}
-						>
-							<Edit className="h-4 w-4" /> Edit
-						</Button>
-					</div>
+					<Button
+						variant="outline"
+						size="sm"
+						className="gap-1"
+						onClick={handleEditClick}
+					>
+						<Edit className="h-4 w-4" />
+						Edit
+					</Button>
 				)}
 			</CardFooter>
 		</Card>

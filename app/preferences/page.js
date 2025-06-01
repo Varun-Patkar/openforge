@@ -267,7 +267,7 @@ export default function PreferencesPage() {
 	};
 
 	return (
-		<div className="container px-4 py-12 mx-auto max-w-5xl space-y-10">
+		<div className="container px-4 py-12 mx-auto max-w-[90%] space-y-10">
 			<div className="text-center">
 				<h1 className="text-3xl font-bold mb-3">LLM Preferences</h1>
 				<p className="text-muted-foreground">

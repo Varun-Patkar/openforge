@@ -5,9 +5,10 @@ import {
 	CardFooter,
 	CardHeader,
 	CardTitle,
+	CardDescription,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, Bot, Edit, Eye, Trash2 } from "lucide-react";
+import { MessageSquare, Lock, Edit, Eye, Trash2 } from "lucide-react"; // Import Lock from lucide-react instead
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { useState } from "react";
@@ -25,8 +26,10 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { cn } from "@/lib/utils";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-export default function BotCard({ bot, isOwner }) {
+export default function BotCard({ bot, isOwner, showAccess = false }) {
 	const router = useRouter();
 	const { toast } = useToast();
 	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -87,37 +90,79 @@ export default function BotCard({ bot, isOwner }) {
 		}
 	};
 
+	const formattedDate = bot.createdAt
+		? new Date(bot.createdAt).toLocaleString("default", {
+				year: "numeric",
+				month: "short",
+				day: "numeric",
+		  })
+		: "Unknown date";
+
 	return (
 		<>
-			<Card className="group h-full flex flex-col hover:shadow-md transition-shadow overflow-hidden">
-				<CardContent className="p-6 pt-2 flex-1 pb-2">
-					<div className="mb-1 flex items-center gap-2">
-						<div className="p-2 rounded-md bg-primary/10">
-							<Bot className="h-5 w-5 text-primary" />
-						</div>
-						<h3 className="font-semibold text-xl line-clamp-1">{bot.name}</h3>
-					</div>
-
-					{/* Tags on separate line */}
-					<div className="flex flex-wrap gap-2 mb-3">
-						<Badge
-							variant={bot.visibility === "public" ? "secondary" : "outline"}
-						>
-							{bot.visibility}
-						</Badge>
-						{bot.tags &&
-							bot.tags.map((tag) => (
-								<Badge key={tag} variant="outline">
-									{tag}
+			<Card
+				className={cn(
+					"hover:shadow-md transition-all border",
+					bot.visibility === "private" && "border-muted-foreground/10"
+				)}
+			>
+				<CardHeader className="space-y-1">
+					<div className="flex justify-between items-start gap-2">
+						<Link href={`/bots/${bot.id}`} className="hover:underline">
+							<CardTitle className="text-xl">{bot.name}</CardTitle>
+						</Link>
+						<div className="flex items-center gap-1">
+							{bot.visibility === "private" && (
+								<Badge variant="outline" className="flex gap-1 text-xs">
+									<Lock className="h-3 w-3" />
+									Private
 								</Badge>
-							))}
+							)}
+							{bot.visibility === "public" && (
+								<Badge variant="secondary" className="text-xs">
+									Public
+								</Badge>
+							)}
+						</div>
 					</div>
 
-					<p className="text-sm text-muted-foreground line-clamp-3 flex-grow">
-						{bot.description || "No description provided."}
-					</p>
-				</CardContent>
+					<CardDescription className="line-clamp-2">
+						{bot.description || "No description provided"}
+					</CardDescription>
 
+					{/* Show access information for private bots */}
+					{showAccess && bot.visibility === "private" && (
+						<div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+							<span className="bg-primary/10 text-primary px-1.5 py-0.5 rounded-sm">
+								{bot.isCollaborator ? "Collaborator" : "Owner"}
+							</span>
+						</div>
+					)}
+
+					{/* Add creator information with profile link */}
+					{bot.creator && (
+						<div className="flex items-center mt-1 text-xs text-muted-foreground">
+							<span className="mr-1">By:</span>
+							<Link
+								href={`/profile/${bot.creator._id || bot.userId}`}
+								className="flex items-center hover:text-primary transition-colors"
+							>
+								<Avatar className="h-4 w-4 mr-1">
+									<AvatarImage
+										src={bot.creator.image}
+										alt={bot.creator.name || "Creator"}
+									/>
+									<AvatarFallback className="text-[10px]">
+										{bot.creator.name
+											? bot.creator.name.charAt(0).toUpperCase()
+											: "U"}
+									</AvatarFallback>
+								</Avatar>
+								<span>{bot.creator.name || "Anonymous User"}</span>
+							</Link>
+						</div>
+					)}
+				</CardHeader>
 				<CardFooter className="border-t p-4 pt-3 gap-2 flex">
 					<Button
 						onClick={handleChatWithBot}

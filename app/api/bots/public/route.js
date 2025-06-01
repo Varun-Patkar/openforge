@@ -6,20 +6,38 @@ export async function GET(request) {
 		const client = await clientPromise;
 		const db = client.db();
 
+		// Get public bots with creator information
 		const bots = await db
 			.collection("bots")
-			.find({ visibility: "public" })
-			.sort({ createdAt: -1 })
+			.aggregate([
+				{ $match: { visibility: "public" } },
+				{
+					$lookup: {
+						from: "users",
+						localField: "userId",
+						foreignField: "_id",
+						as: "creator",
+					},
+				},
+				{ $unwind: { path: "$creator", preserveNullAndEmptyArrays: true } },
+				{
+					$project: {
+						_id: 1,
+						name: 1,
+						description: 1,
+						visibility: 1,
+						userId: 1,
+						createdAt: 1,
+						updatedAt: 1,
+						"creator.name": 1,
+						"creator.image": 1,
+					},
+				},
+				{ $sort: { createdAt: -1 } },
+			])
 			.toArray();
 
-		const formattedBots = bots.map((bot) => ({
-			...bot,
-			_id: bot._id.toString(),
-			id: bot._id.toString(),
-			userId: bot.userId.toString(),
-		}));
-
-		return new Response(JSON.stringify(formattedBots), {
+		return new Response(JSON.stringify(bots), {
 			status: 200,
 			headers: { "Content-Type": "application/json" },
 		});

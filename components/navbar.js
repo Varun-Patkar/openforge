@@ -80,7 +80,7 @@ export function Navbar() {
 
 	return (
 		<header className="border-b bg-card">
-			<div className="container mx-auto px-4 flex items-center justify-between h-16">
+			<div className="container mx-auto px-4 flex items-center justify-between h-16 max-w-[95%]">
 				{/* Logo */}
 				<Link href="/" className="flex items-center gap-2 font-bold text-xl">
 					<Cpu className="h-6 w-6 text-primary" />
@@ -134,7 +134,7 @@ export function Navbar() {
 								</DropdownMenuLabel>
 								<DropdownMenuSeparator />
 								<DropdownMenuItem
-									onClick={() => router.push("/profile")}
+									onClick={() => router.push(`/profile/${user.id}`)}
 									className="cursor-pointer"
 								>
 									<UserIcon className="mr-2 h-4 w-4" />
@@ -185,7 +185,7 @@ export function Navbar() {
 									</DropdownMenuLabel>
 									<DropdownMenuSeparator />
 									<DropdownMenuItem
-										onClick={() => router.push("/profile")}
+										onClick={() => router.push(`/profile/${user.id}`)}
 										className="cursor-pointer"
 									>
 										<UserIcon className="mr-2 h-4 w-4" />

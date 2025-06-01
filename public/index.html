@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>OpenForge Model Chat Interface</title>
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+	<style>
+		:root {
+			--primary-color: #4e5fff;
+			--secondary-color: #e0e3ff;
+			--dark-color: #2a2a2a;
+			--light-color: #f8f9fa;
+		}
+
+		body {
+			font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+			background-color: #f5f7fb;
+			height: 100vh;
+			display: flex;
+			flex-direction: column;
+		}
+
+		.chat-container {
+			flex: 1;
+			display: flex;
+			flex-direction: column;
+			width: 90vw;
+			max-width: 90vw;
+			margin: 0 auto;
+			background-color: white;
+			border-radius: 12px;
+			box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+			overflow: hidden;
+		}
+
+		.chat-header {
+			background-color: var(--primary-color);
+			color: white;
+			padding: 15px 20px;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+		}
+
+		.chat-header h1 {
+			font-size: 1.5rem;
+			margin: 0;
+		}
+
+		.chat-messages {
+			flex: 1;
+			overflow-y: auto;
+			padding: 20px;
+			display: flex;
+			flex-direction: column;
+			gap: 15px;
+		}
+
+		.message {
+			max-width: 80%;
+			padding: 12px 18px;
+			border-radius: 18px;
+			margin-bottom: 8px;
+			position: relative;
+			animation: fadeIn 0.3s ease-in-out;
+			word-wrap: break-word;
+			overflow-wrap: break-word;
+		}
+
+		@keyframes fadeIn {
+			from {
+				opacity: 0;
+				transform: translateY(10px);
+			}
+
+			to {
+				opacity: 1;
+				transform: translateY(0);
+			}
+		}
+
+		.user-message {
+			align-self: flex-end;
+			background-color: var(--primary-color);
+			color: white;
+			border-bottom-right-radius: 5px;
+		}
+
+		.bot-message {
+			align-self: flex-start;
+			background-color: var(--secondary-color);
+			color: var(--dark-color);
+			border-bottom-left-radius: 5px;
+		}
+
+		.message-time {
+			font-size: 0.7rem;
+			opacity: 0.7;
+			margin-top: 5px;
+			text-align: right;
+		}
+
+		.chat-input-container {
+			padding: 15px;
+			background-color: var(--light-color);
+			border-top: 1px solid #e0e0e0;
+		}
+
+		.chat-input-wrapper {
+			display: flex;
+			gap: 10px;
+		}
+
+		.chat-input {
+			flex: 1;
+			border: 1px solid #ddd;
+			border-radius: 24px;
+			padding: 12px 20px;
+			outline: none;
+			transition: all 0.3s;
+		}
+
+		.chat-input:focus {
+			border-color: var(--primary-color);
+			box-shadow: 0 0 0 3px rgba(78, 95, 255, 0.2);
+		}
+
+		.send-btn {
+			background-color: var(--primary-color);
+			color: white;
+			border: none;
+			border-radius: 50%;
+			width: 48px;
+			height: 48px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			cursor: pointer;
+			transition: all 0.2s;
+		}
+
+		.send-btn:hover {
+			background-color: #3a4ade;
+			transform: scale(1.05);
+		}
+
+		.send-btn:active {
+			transform: scale(0.95);
+		}
+
+		.chat-controls {
+			padding: 10px 15px;
+			background-color: #fff;
+			border-top: 1px solid #eee;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+		}
+
+		.model-selector {
+			flex: 1;
+			max-width: 23rem;
+		}
+
+		.typing-indicator {
+			display: flex;
+			align-items: center;
+			margin-left: 15px;
+			color: #888;
+			font-style: italic;
+		}
+
+		.typing-dots {
+			display: flex;
+			margin-left: 5px;
+		}
+
+		.typing-dot {
+			width: 8px;
+			height: 8px;
+			background-color: #888;
+			border-radius: 50%;
+			margin: 0 2px;
+			animation: typingAnimation 1.5s infinite ease-in-out;
+		}
+
+		.typing-dot:nth-child(2) {
+			animation-delay: 0.2s;
+		}
+
+		.typing-dot:nth-child(3) {
+			animation-delay: 0.4s;
+		}
+
+		@keyframes typingAnimation {
+
+			0%,
+			60%,
+			100% {
+				transform: translateY(0);
+			}
+
+			30% {
+				transform: translateY(-5px);
+			}
+		}
+
+		.welcome-message {
+			text-align: center;
+			padding: 30px;
+			color: #666;
+		}
+
+		.loading-container {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			height: 100px;
+			gap: 15px;
+		}
+
+		.loading-spinner {
+			width: 40px;
+			height: 40px;
+			border: 4px solid rgba(78, 95, 255, 0.2);
+			border-left-color: var(--primary-color);
+			border-radius: 50%;
+			animation: spin 1s linear infinite;
+		}
+
+		@keyframes spin {
+			to {
+				transform: rotate(360deg);
+			}
+		}
+
+		.model-info {
+			font-size: 0.8rem;
+			color: #666;
+			margin-top: 5px;
+		}
+
+		footer {
+			text-align: center;
+			padding: 15px;
+			color: #666;
+			font-size: 0.8rem;
+		}
+
+		.params-container {
+			padding: 15px;
+			background-color: #f8f9fa;
+			border-top: 1px solid #e0e0e0;
+		}
+
+		.params-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			cursor: pointer;
+			margin-bottom: 10px;
+		}
+
+		.params-header h6 {
+			margin: 0;
+		}
+
+		.params-body {
+			overflow: hidden;
+			transition: max-height 0.3s ease;
+			max-height: 300px;
+			/* Set a maximum height when expanded */
+		}
+
+		.params-body.collapsed {
+			max-height: 0;
+		}
+
+		.param-slider {
+			margin-bottom: 10px;
+		}
+
+		.param-slider label {
+			display: flex;
+			justify-content: space-between;
+			margin-bottom: 5px;
+		}
+
+		.param-value {
+			font-weight: bold;
+		}
+
+		.model-details {
+			padding: 15px;
+			background-color: #f8f9fa;
+			border-bottom: 1px solid #e0e0e0;
+		}
+
+		.model-description {
+			font-size: 0.9rem;
+			color: #555;
+			margin-top: 5px;
+		}
+
+		.model-help {
+			font-size: 0.8rem;
+			color: #666;
+			margin-top: 5px;
+		}
+
+		.model-help a {
+			color: var(--primary-color);
+			text-decoration: none;
+		}
+
+		.model-help a:hover {
+			text-decoration: underline;
+		}
+
+		@media (max-width: 768px) {
+			.chat-container {
+				height: 100%;
+				border-radius: 0;
+				max-width: 100%;
+			}
+
+			.message {
+				max-width: 90%;
+			}
+		}
+	</style>
+</head>
+
+<body class="d-flex flex-column vh-100">
+	<div class="container-fluid p-0 d-flex flex-column flex-grow-1">
+		<div class="row justify-content-center m-0 flex-grow-1">
+			<div class="col-12 d-flex justify-content-center p-3">
+				<div class="chat-container flex-grow-1 d-flex flex-column">
+					<div class="chat-header">
+						<h1><i class="fas fa-robot me-2"></i> <span id="modelTitle">AI Chat</span></h1>
+						<div>
+							<button id="resetBtn" class="btn btn-sm btn-outline-light">
+								<i class="fas fa-redo"></i> Reset Chat
+							</button>
+						</div>
+					</div>
+
+					<div id="modelDetails" class="model-details d-none">
+						<h5 id="modelName">Model Name</h5>
+						<div id="modelDescription" class="model-description">Model description will appear here.</div>
+					</div>
+
+					<div id="chatMessages" class="chat-messages">
+						<div class="welcome-message">
+							<h3>Welcome to OpenForge Model Chat</h3>
+							<p>Select a model from the dropdown below to begin.</p>
+						</div>
+					</div>
+
+					<div id="loadingIndicator" class="loading-container d-none">
+						<div class="loading-spinner"></div>
+						<div>Initializing model...</div>
+					</div>
+
+					<div class="chat-controls">
+						<div class="model-selector">
+							<div class="input-group">
+								<input type="text" id="modelSelector" class="form-control"
+									placeholder="Enter model name" value="Llama-3.2-3B-Instruct-q4f16_1-MLC">
+								<button id="loadModelBtn" class="btn btn-primary">
+									<i class="fas fa-sync-alt"></i> Load
+								</button>
+							</div>
+							<div class="model-help">
+								Find models at <a href="https://chat.webllm.ai/" target="_blank">WebLLM Chat</a> - copy
+								exact
+								model name
+							</div>
+							<div id="modelInfo" class="model-info"></div>
+						</div>
+
+						<div id="typingIndicator" class="typing-indicator d-none">
+							<span>Model is generating</span>
+							<div class="typing-dots">
+								<div class="typing-dot"></div>
+								<div class="typing-dot"></div>
+								<div class="typing-dot"></div>
+							</div>
+						</div>
+					</div>
+
+					<div id="paramsContainer" class="params-container d-none">
+						<div class="params-header" id="paramsHeader">
+							<h6>Model Parameters</h6>
+							<button type="button" class="btn btn-sm btn-outline-secondary">
+								<i class="fas fa-chevron-up" id="paramsToggleIcon"></i>
+							</button>
+						</div>
+						<div class="params-body collapsed" id="paramsBody">
+							<div class="param-slider">
+								<label for="temperatureSlider">
+									Temperature
+									<span id="temperatureValue" class="param-value">0.7</span>
+								</label>
+								<input type="range" id="temperatureSlider" class="form-range" min="0" max="1" step="0.1"
+									value="0.7">
+							</div>
+							<div class="param-slider">
+								<label for="topPSlider">
+									Top P
+									<span id="topPValue" class="param-value">0.9</span>
+								</label>
+								<input type="range" id="topPSlider" class="form-range" min="0" max="1" step="0.1"
+									value="0.9">
+							</div>
+							<div class="param-slider">
+								<label for="contextWindowInput">
+									Context Window
+									<span id="contextWindowValue" class="param-value">2</span>
+								</label>
+								<input type="range" id="contextWindowInput" class="form-range" min="1" max="10" step="1"
+									value="2">
+							</div>
+						</div>
+					</div>
+
+					<div class="chat-input-container">
+						<div class="chat-input-wrapper">
+							<input type="text" id="messageInput" class="chat-input"
+								placeholder="Type your message here..." disabled>
+							<button id="sendBtn" class="send-btn" disabled>
+								<i class="fas fa-paper-plane"></i>
+							</button>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<footer>
+		<p>OpenForge Local Model Chat | Powered by WebLLM</p>
+	</footer>
+
+	<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.5/dist/purify.min.js"></script>
+	<script type="module">
+		document.addEventListener('DOMContentLoaded', async () => {
+			// DOM elements
+			const chatMessages = document.getElementById('chatMessages');
+			const messageInput = document.getElementById('messageInput');
+			const sendBtn = document.getElementById('sendBtn');
+			const resetBtn = document.getElementById('resetBtn');
+			const modelSelector = document.getElementById('modelSelector');
+			const modelInfo = document.getElementById('modelInfo');
+			const loadingIndicator = document.getElementById('loadingIndicator');
+			const typingIndicator = document.getElementById('typingIndicator');
+			const modelTitle = document.getElementById('modelTitle');
+			const modelName = document.getElementById('modelName');
+			const modelDescription = document.getElementById('modelDescription');
+			const modelDetails = document.getElementById('modelDetails');
+			const paramsContainer = document.getElementById('paramsContainer');
+			const loadModelBtn = document.getElementById('loadModelBtn');
+
+			// Parameter controls
+			const temperatureSlider = document.getElementById('temperatureSlider');
+			const topPSlider = document.getElementById('topPSlider');
+			const contextWindowInput = document.getElementById('contextWindowInput');
+			const temperatureValue = document.getElementById('temperatureValue');
+			const topPValue = document.getElementById('topPValue');
+			const contextWindowValue = document.getElementById('contextWindowValue');
+
+			// Chat state
+			let chatHistory = [];
+			let modelConfig = null;
+			let currentModel = '';
+			let activeModelInstance = null;
+			let isGenerating = false;
+			let modelOptions = {
+				temperature: 0.7,
+				topP: 0.9
+			};
+
+			// Parameter update handlers
+			temperatureSlider.addEventListener('input', function () {
+				temperatureValue.textContent = this.value;
+				modelOptions.temperature = parseFloat(this.value);
+			});
+
+			topPSlider.addEventListener('input', function () {
+				topPValue.textContent = this.value;
+				modelOptions.topP = parseFloat(this.value);
+			});
+
+			contextWindowInput.addEventListener('input', function () {
+				contextWindowValue.textContent = this.value;
+				// This is just for UI display
+			});
+
+			// Add a message to the chat
+			function addMessage(role, content) {
+				const messageDiv = document.createElement('div');
+
+				if (role === 'user') {
+					messageDiv.className = 'message user-message';
+					messageDiv.textContent = content;
+				} else if (role === 'assistant') {
+					messageDiv.className = 'message bot-message';
+					// Parse markdown and sanitize HTML
+					const htmlContent = DOMPurify.sanitize(marked.parse(content));
+					messageDiv.innerHTML = htmlContent;
+				} else {
+					// System messages
+					messageDiv.className = 'message bot-message';
+					messageDiv.textContent = content;
+				}
+
+				// Add timestamp
+				const timeDiv = document.createElement('div');
+				timeDiv.className = 'message-time';
+				timeDiv.textContent = new Date().toLocaleTimeString();
+				messageDiv.appendChild(timeDiv);
+
+				chatMessages.appendChild(messageDiv);
+
+				// Scroll to bottom
+				chatMessages.scrollTop = chatMessages.scrollHeight;
+			}
+
+			// Load model configuration
+			try {
+				const response = await fetch('model.json');
+				modelConfig = await response.json();
+				console.log('Model configuration loaded:', modelConfig);
+
+				// Set page title
+				document.title = modelConfig.BotName || "OpenForge Model Chat";
+				modelTitle.textContent = modelConfig.BotName || "AI Chat";
+
+				// Set model details
+				modelName.textContent = modelConfig.BotName || "AI Assistant";
+				modelDescription.textContent = modelConfig.Description || "";
+				modelDetails.classList.remove('d-none');
+
+				// Set default parameter values from model.json
+				if (modelConfig.DefaultParams) {
+					if (modelConfig.DefaultParams.Temperature !== undefined) {
+						temperatureSlider.value = modelConfig.DefaultParams.Temperature;
+						temperatureValue.textContent = modelConfig.DefaultParams.Temperature;
+						modelOptions.temperature = modelConfig.DefaultParams.Temperature;
+					}
+
+					if (modelConfig.DefaultParams["Top P"] !== undefined) {
+						topPSlider.value = modelConfig.DefaultParams["Top P"];
+						topPValue.textContent = modelConfig.DefaultParams["Top P"];
+						modelOptions.topP = modelConfig.DefaultParams["Top P"];
+					}
+
+					if (modelConfig.DefaultParams.ContextWindow !== undefined) {
+						contextWindowInput.value = modelConfig.DefaultParams.ContextWindow;
+						contextWindowValue.textContent = modelConfig.DefaultParams.ContextWindow;
+					}
+				}
+
+				// Enable model selection
+				modelSelector.disabled = false;
+				loadModelBtn.disabled = false;
+
+				addMessage('system', 'Configuration loaded. Enter a model name and click Load to begin.');
+			} catch (error) {
+				console.error('Error loading model configuration:', error);
+				addMessage('system', 'Failed to load model configuration. Please check if model.json exists and is valid.');
+			}
+
+			// Add params collapse functionality
+			const paramsHeader = document.getElementById('paramsHeader');
+			const paramsBody = document.getElementById('paramsBody');
+			const paramsToggleIcon = document.getElementById('paramsToggleIcon');
+
+			// Set up the toggle handler for parameters section
+			paramsHeader.addEventListener('click', () => {
+				paramsBody.classList.toggle('collapsed');
+
+				// Update the icon based on collapsed state
+				if (paramsBody.classList.contains('collapsed')) {
+					paramsToggleIcon.classList.replace('fa-chevron-down', 'fa-chevron-up');
+				} else {
+					paramsToggleIcon.classList.replace('fa-chevron-up', 'fa-chevron-down');
+				}
+			});
+
+			// Event listeners
+			loadModelBtn.addEventListener('click', async () => {
+				const modelId = modelSelector.value.trim();
+				if (!modelId) return;
+
+				// If we already have a model loaded and trying to switch to a different one
+				if (currentModel && modelId !== currentModel) {
+					// Ask for confirmation before switching models
+					if (confirm("Switching models will reset your chat history. Do you want to continue?")) {
+						await initializeModel(modelId);
+					}
+				} else if (!currentModel) {
+					// No model loaded yet, just load it
+					await initializeModel(modelId);
+				}
+			});
+
+			messageInput.addEventListener('keypress', (e) => {
+				if (e.key === 'Enter' && messageInput.value.trim()) {
+					sendMessage();
+				}
+			});
+
+			sendBtn.addEventListener('click', () => {
+				if (messageInput.value.trim()) {
+					sendMessage();
+				}
+			});
+
+			resetBtn.addEventListener('click', () => {
+				resetChat();
+			});
+
+			// Send a message
+			async function sendMessage() {
+				const userMessage = messageInput.value.trim();
+				if (!userMessage) return;
+
+				// Check if model is initialized, if not, initialize it first
+				if (!currentModel) {
+					const modelId = modelSelector.value.trim();
+					if (!modelId) {
+						addMessage('system', 'Please enter a model name first.');
+						return;
+					}
+
+					// Disable input while loading model
+					messageInput.disabled = true;
+					sendBtn.disabled = true;
+
+					try {
+						await initializeModel(modelId);
+						// Now send the message after model is loaded
+						sendMessageToModel(userMessage);
+					} catch (error) {
+						console.error('Error initializing model:', error);
+						addMessage('system', 'Failed to initialize the model. Please try again or select a different model.');
+						messageInput.disabled = false;
+						sendBtn.disabled = false;
+					}
+				} else {
+					// Model already loaded, send message directly
+					if (isGenerating) return; // Don't allow sending if already generating
+					sendMessageToModel(userMessage);
+				}
+			}
+
+			// Send message to model (after model is loaded)
+			async function sendMessageToModel(userMessage) {
+				// Add user message to chat
+				addMessage('user', userMessage);
+				messageInput.value = '';
+
+				// Save to chat history
+				chatHistory.push({ role: 'user', content: userMessage });
+
+				// Show typing indicator
+				isGenerating = true;
+				typingIndicator.classList.remove('d-none');
+				messageInput.disabled = true;
+				sendBtn.disabled = true;
+
+				try {
+					// Prepare messages array with system prompt and conversation history
+					const messages = [];
+
+					// Add system message if available
+					if (modelConfig && modelConfig.SystemPrompt) {
+						messages.push({ role: "system", content: modelConfig.SystemPrompt });
+					}
+
+					// Add conversation history (excluding current message)
+					chatHistory.slice(0, -1).forEach(msg => {
+						messages.push({ role: msg.role, content: msg.content });
+					});
+
+					// Add current message
+					messages.push({ role: "user", content: userMessage });
+
+					// Generate response using streaming API
+					const chunks = await activeModelInstance.chat.completions.create({
+						messages,
+						temperature: modelOptions.temperature,
+						top_p: modelOptions.topP,
+						stream: true, // Enable streaming
+						stream_options: { include_usage: true },
+					});
+
+					// Create a message div that will be updated incrementally
+					const responseMessageDiv = document.createElement('div');
+					responseMessageDiv.className = 'message bot-message';
+					chatMessages.appendChild(responseMessageDiv);
+
+					// Add timestamp
+					const timeDiv = document.createElement('div');
+					timeDiv.className = 'message-time';
+					timeDiv.textContent = new Date().toLocaleTimeString();
+
+					let response = "";
+					for await (const chunk of chunks) {
+						// Extract content from the chunk
+						const content = chunk.choices[0]?.delta.content || "";
+						response += content;
+
+						// Update the message with the accumulated response
+						const htmlContent = DOMPurify.sanitize(marked.parse(response));
+						responseMessageDiv.innerHTML = htmlContent;
+						responseMessageDiv.appendChild(timeDiv);
+
+						// Scroll to bottom as content is added
+						chatMessages.scrollTop = chatMessages.scrollHeight;
+					}
+
+					// Save complete response to chat history
+					chatHistory.push({ role: 'assistant', content: response });
+
+				} catch (error) {
+					console.error('Error generating response:', error);
+
+					// Check if it's likely a model name error
+					if (error.toString().includes('model') || error.toString().includes('Model')) {
+						resetChatWithError('Error: The model may be invalid or not loaded correctly. Please try a different model.');
+					} else {
+						addMessage('system', 'Sorry, I encountered an error generating a response. Please try again.');
+					}
+				} finally {
+					// Hide typing indicator only if we didn't reset the chat
+					if (currentModel) {
+						isGenerating = false;
+						typingIndicator.classList.add('d-none');
+						messageInput.disabled = false;
+						sendBtn.disabled = false;
+						messageInput.focus();
+					}
+				}
+			}
+
+			// Initialize selected model
+			async function initializeModel(modelId) {
+				try {
+					chatMessages.innerHTML = '';
+					loadingIndicator.classList.remove('d-none');
+					messageInput.disabled = true;
+					sendBtn.disabled = true;
+					modelSelector.disabled = true;
+					loadModelBtn.disabled = true;
+					paramsContainer.classList.add('d-none');
+
+					// Dynamically import WebLLM
+					const webllm = await import("https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.72/lib/index.min.js");
+
+					// Initialize the model with progress callback
+					const initProgressCallback = (initProgress) => {
+						const progressValue = initProgress.progress;
+						const percent = Math.round(progressValue * 100);
+						loadingIndicator.querySelector('div:nth-child(2)').textContent =
+							`Loading model: ${percent}%`;
+					};
+
+					// Create the engine
+					activeModelInstance = await webllm.CreateMLCEngine(
+						modelId,
+						{ initProgressCallback: initProgressCallback },
+					);
+
+					// Store in window for debugging if needed
+					window.engine = activeModelInstance;
+
+					// Model loaded successfully, update current model
+					currentModel = modelId;
+
+					// Reset chat history
+					chatHistory = [];
+
+					// Display model info
+					modelInfo.textContent = `Using ${modelId}`;
+
+					// Enable input and show params
+					messageInput.disabled = false;
+					sendBtn.disabled = false;
+					modelSelector.disabled = false;
+					loadModelBtn.disabled = false;
+					paramsContainer.classList.remove('d-none');
+
+					// Keep params body collapsed when params are shown
+					// Don't change the collapse state here
+
+					// Hide loading indicator
+					loadingIndicator.classList.add('d-none');
+
+					// Add welcome message
+					const welcomeMsg = modelConfig && modelConfig.BotName
+						? `Hello! I'm ${modelConfig.BotName}. How can I help you today?`
+						: `Model loaded successfully. How can I help you today?`;
+
+					addMessage('system', welcomeMsg);
+
+					console.log(`Model ${modelId} initialized`);
+				} catch (error) {
+					console.error('Error initializing model:', error);
+					resetChatWithError(`Failed to initialize model "${modelId}". Please check the model name and try again.`);
+				}
+			}
+
+			// Reset chat with error message
+			function resetChatWithError(errorMessage) {
+				chatMessages.innerHTML = '';
+				currentModel = '';
+				activeModelInstance = null;
+				chatHistory = [];
+
+				addMessage('system', errorMessage);
+
+				// Re-enable inputs
+				messageInput.disabled = true;
+				sendBtn.disabled = true;
+				modelSelector.disabled = false;
+				loadModelBtn.disabled = false;
+				loadingIndicator.classList.add('d-none');
+				paramsContainer.classList.add('d-none');
+
+				// Update model info
+				modelInfo.textContent = '';
+			}
+
+			// Reset chat
+			function resetChat() {
+				// Clear chat messages
+				chatMessages.innerHTML = '';
+
+				// Reset chat history
+				chatHistory = [];
+
+				// Add welcome message based on current model
+				if (currentModel) {
+					const welcomeMsg = modelConfig && modelConfig.BotName
+						? `Hello! I'm ${modelConfig.BotName}. How can I help you today?`
+						: `Chat has been reset. How can I help you today?`;
+
+					addMessage('system', welcomeMsg);
+				} else {
+					addMessage('system', 'Chat has been reset. Please load a model to begin.');
+				}
+			}
+		});
+	</script>
+</body>
+
+</html>
