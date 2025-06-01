@@ -286,9 +286,16 @@ export function BranchSelector({
 					<AlertDialogHeader>
 						<AlertDialogTitle>Delete Branch</AlertDialogTitle>
 						<AlertDialogDescription>
-							Are you sure you want to delete the branch "{branchToDelete?.name}
-							"? This action cannot be undone and all commits specific to this
-							branch will be lost.
+							<p>
+								Are you sure you want to delete &quot;{branchToDelete?.name}
+								&quot;? This action cannot be undone and all commits specific to
+								this branch will be lost.
+							</p>
+							{branchToDelete?.isDefault && (
+								<p className="text-sm text-muted-foreground">
+									You can&apos;t delete the default branch.
+								</p>
+							)}
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>

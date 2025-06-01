@@ -235,6 +235,13 @@ export default function BotCard({ bot, isOwner, showAccess = false }) {
 					</AlertDialogFooter>
 				</AlertDialogContent>
 			</AlertDialog>
+
+			{/* Read-only mode message */}
+			{bot.isReadOnly && (
+				<div className="mt-2 text-center text-sm text-muted-foreground">
+					<span>This bot is in &quot;read-only&quot; mode.</span>
+				</div>
+			)}
 		</>
 	);
 }

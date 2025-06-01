@@ -46,6 +46,7 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import ReactMarkdown from "react-markdown";
+import Link from "next/link";
 
 // Import WebLLM components - these would be in a separate file in reality
 import dynamic from "next/dynamic";
@@ -104,10 +105,13 @@ export default function ChatPage({ params }) {
 	useEffect(() => {
 		if (status === "unauthenticated") {
 			router.push("/auth");
-		} else if (status === "authenticated" && chatId) {
+			return;
+		}
+
+		if (chatId) {
 			loadChat();
 		}
-	}, [status, chatId, router]);
+	}, [chatId, status, router, loadChat]);
 
 	// Get active preference when component loads
 	useEffect(() => {
